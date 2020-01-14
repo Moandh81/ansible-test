@@ -1,0 +1,115 @@
+---
+- hosts: all
+  remote_user: root
+  tasks:
+    - name: copy vagrantfile
+      copy:
+        src: ./Vagrantfile
+        dest: /home
+        mode: 0644
+      become: yes
+    
+    - name: install git
+      apt:
+        name: git
+        state: present
+      become: yes
+      
+    - name: install apache 
+      apt:
+        name: apache2
+        state: present
+      become: yes
+
+    - name: enable apache server
+      service:
+        name: apache2
+        enabled: yes
+      become: yes
+
+    - name: restart apache server
+      service:
+        name: apache2
+        state: restarted 
+      become: yes
+
+    - name: install mariadb server
+      apt:
+        name: mariadb-server
+        state: present
+      become: yes
+    
+    - name: restart mariadb server
+      service:
+        name: mariadb
+        state: restarted
+      become: yes
+
+    - name: install php packages
+      apt: 
+        pkg:
+          - mcrypt
+          - php7.0-cli
+          - php7.0-curl
+          - php7.0-fpm
+          - php7.0-intl
+          - php7.0-json
+          - php7.0-mcrypt
+          - php-sqlite3
+          - php7.0-pdo
+          - php7.0-zip
+          - php7.0-xml
+          - unzip
+          - php7.0-mbstring
+          - sqlite3
+          - libapache2-mod-php7.0
+          - libapache2-mod-php
+      become: yes
+
+
+    - name: copy composer script to remote system
+      copy:
+        src: ./composer.sh
+        dest: /home/vagrant
+        mode: 755
+      become: yes      
+
+    - name: install composer
+      shell: /home/vagrant/composer.sh >> somelog.txt
+      become: yes
+
+    - name: change path for compose executable
+      command:
+        cmd : mv composer.phar /usr/local/bin/composer
+      become: yes
+
+    - name: create the directory for the laravel installation
+      file:
+        path: /var/www/html/laravel
+        state: directory
+        mode: '0755'
+      become: yes  
+      
+
+    - name: install laravel 
+      composer:
+        command: create-project
+        arguments: laravel/laravel /var/www/html/laravel ~5.5
+        working_dir: /var/www/html/laravel
+        prefer_dist: yes
+      become: yes
+
+    - name: change permissions on storage folders
+      file:
+        path: /var/www/html/laravel/storage
+        mode: '0777'
+        recurse: yes
+      become: yes
+
+    - name: change permissions on storage folders
+      file:
+        path: /var/www/html/laravel/bootstrap/cache
+        mode: '0777'
+        recurse: yes
+      become: yes
+
